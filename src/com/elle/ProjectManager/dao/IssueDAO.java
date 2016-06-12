@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * IssueDAO
@@ -70,7 +71,7 @@ public class IssueDAO {
      * Insert statement is used to add the issue to the database. 
      * @param sue 
      */
-    public boolean insert(Issue issue) {
+    public boolean insert(Issue issue) throws SQLException {
         
         boolean successful = false;
         DBConnection.close();
@@ -80,7 +81,7 @@ public class IssueDAO {
             int id = issue.getId();
             String app = format(issue.getApp());
             String title = format(issue.getTitle());
-            String description = format(issue.getDescription());
+            byte[] description = issue.getDescription();
             String programmer = format(issue.getProgrammer());
             String dateOpened = format(issue.getDateOpened());
             String rk = (issue.getRk().equals(""))?null:issue.getRk(); // no single quotes
@@ -89,22 +90,28 @@ public class IssueDAO {
             String issueType = format(issue.getIssueType());
             String submitter = format(issue.getSubmitter());
             String locked = format(issue.getLocked());
-
-            String sql = "INSERT INTO " + DB_TABLE_NAME + " (" + COL_PK_ID + ", " 
-                    + COL_APP + ", " +  COL_TITLE + ", " +  COL_DESCRIPTION + ", " 
-                    +  COL_PROGRAMMER + ", " +  COL_DATE_OPENED + ", " +  COL_RK 
-                    + ", " +  COL_VERSION + ", " +  COL_DATE_CLOSED + ", " 
-                    +  COL_ISSUE_TYPE + ", " +  COL_SUBMITTER + ", " 
-                    +  COL_LOCKED  + ") " 
-                    + "VALUES (" + id + ", " + app + ", " +  title + ", " 
-                    +  description + ", " +  programmer + ", " +  dateOpened 
-                    + ", " +  rk + ", " +  version + ", " +  dateClosed 
-                    + ", " +  issueType + ", " +  submitter + ", " 
-                    +  locked  + ") ";
-
+            
             try {
-                Statement statement = DBConnection.getStatement();
-                statement.executeUpdate(sql);
+                String sql = "INSERT INTO " + DB_TABLE_NAME + " (" + COL_PK_ID + ", " 
+                        + COL_APP + ", " +  COL_TITLE + ", " +  COL_DESCRIPTION + ", " 
+                        +  COL_PROGRAMMER + ", " +  COL_DATE_OPENED + ", " +  COL_RK 
+                        + ", " +  COL_VERSION + ", " +  COL_DATE_CLOSED + ", " 
+                        +  COL_ISSUE_TYPE + ", " +  COL_SUBMITTER + ", " 
+                        +  COL_LOCKED  + ") " 
+                        + "VALUES (" + id + ", " + app + ", " +  title + ", " 
+                        +  "?" + ", " +  programmer + ", " +  dateOpened 
+                        + ", " +  rk + ", " +  version + ", " +  dateClosed 
+                        + ", " +  issueType + ", " +  submitter + ", " 
+                        +  locked  + ") ";
+                          
+                Connection con = DBConnection.getConnection();
+                PreparedStatement pstmt = con.prepareStatement(sql);
+
+
+                pstmt.setBytes(1, description);
+
+                pstmt.execute();
+
                 LoggingAspect.afterReturn("Upload Successful!");
                 successful = true;
             }
@@ -126,7 +133,7 @@ public class IssueDAO {
      * update
      * @param issue 
      */
-    public boolean update(Issue issue) {
+    public boolean update(Issue issue) throws SQLException {
         
         boolean successful = false;
         DBConnection.close();
@@ -136,7 +143,7 @@ public class IssueDAO {
             int id = issue.getId();
             String app = format(issue.getApp());
             String title = format(issue.getTitle());
-            String description = format(issue.getDescription());
+            byte[] description = issue.getDescription();
             String programmer = format(issue.getProgrammer());
             String dateOpened = format(issue.getDateOpened());
             String rk = (issue.getRk().equals(""))?null:issue.getRk(); // no single quotes
@@ -145,27 +152,30 @@ public class IssueDAO {
             String issueType = format(issue.getIssueType());
             String submitter = format(issue.getSubmitter());
             String locked = format(issue.getLocked());
-          
-            
-   
-            
-            String sql = "UPDATE " + DB_TABLE_NAME + " SET " 
+                
+            try {
+                String sql = "UPDATE issues SET "
                     + COL_APP + " = " + app + ", "
                     + COL_TITLE + " = " + title + ", "
-                    + COL_DESCRIPTION + " = " + description + ", "
-                    + COL_PROGRAMMER + " = " + programmer + ", "
-                    + COL_DATE_OPENED + " = " + dateOpened + ", "
-                    + COL_RK + " = " + rk + ", "
-                    + COL_VERSION + " = " + version + ", "
-                    + COL_DATE_CLOSED + " = " + dateClosed + ", "
-                    + COL_ISSUE_TYPE + " = " + issueType + ", "
-                    + COL_SUBMITTER + " = " + submitter + ", "
-                    + COL_LOCKED + " = " + locked + " "
-                    + "WHERE " + COL_PK_ID + " = " + id + ";";
-          System.out.println("update : " + sql );
-            try {
-                Statement statement = DBConnection.getStatement();
-                statement.executeUpdate(sql);
+                    + COL_DESCRIPTION + " = ?, "
+                    +  COL_PROGRAMMER   + " = " + programmer + ", " 
+                    +  COL_DATE_OPENED   + " = " + dateOpened + ", "
+                    +  COL_RK   + " = " + rk + ", "
+                    +  COL_VERSION   + " = " + version + ", "
+                    +  COL_DATE_CLOSED   + " = " + dateClosed + ", "
+                    +  COL_ISSUE_TYPE   + " = " + issueType + ", "
+                    +  COL_SUBMITTER   + " = " + submitter + ", "
+                    +  COL_LOCKED   + " = " + locked + " "
+                    + "WHERE " + COL_PK_ID + " = " + id;
+
+                Connection con = DBConnection.getConnection();
+                PreparedStatement pstmt = con.prepareStatement(sql);
+
+
+                pstmt.setBytes(1, description);
+
+                pstmt.execute();
+
                 LoggingAspect.afterReturn("Upload Successful!");
                 successful = true;
             }
@@ -181,6 +191,12 @@ public class IssueDAO {
     /**
      * delete
      * @param ids 
+     */
+
+    /**
+     * delete
+     * @param ids
+     * @return
      */
     public boolean delete(int[] ids){
 
@@ -316,7 +332,10 @@ public class IssueDAO {
                 issue.setId(rs.getInt(COL_PK_ID));
                 issue.setApp(rs.getString(COL_APP));
                 issue.setTitle(rs.getString(COL_TITLE));
-                issue.setDescription(rs.getString(COL_DESCRIPTION));
+                
+                issue.setDescription(rs.getBytes(COL_DESCRIPTION));
+                
+                
                 issue.setProgrammer(rs.getString(COL_PROGRAMMER));
                 issue.setDateOpened(rs.getString(COL_DATE_OPENED));
                 issue.setRk(rs.getString(COL_RK));
@@ -339,8 +358,6 @@ public class IssueDAO {
     
     public Issue getSelectedRow(String tableName, String row) {
         
-       
-      
         ResultSet rs = null;
         String sql = "";
         
@@ -359,7 +376,7 @@ public class IssueDAO {
                 issue.setId(rs.getInt(COL_PK_ID));
                 issue.setApp(rs.getString(COL_APP));
                 issue.setTitle(rs.getString(COL_TITLE));
-                issue.setDescription(rs.getString(COL_DESCRIPTION));
+                issue.setDescription(rs.getBytes(COL_DESCRIPTION));
                 issue.setProgrammer(rs.getString(COL_PROGRAMMER));
                 issue.setDateOpened(rs.getString(COL_DATE_OPENED));
                 issue.setRk(rs.getString(COL_RK));

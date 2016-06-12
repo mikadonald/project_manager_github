@@ -27,8 +27,16 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -45,7 +53,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.rtf.RTFEditorKit;
+import org.apache.poi.hwpf.HWPFDocument;
+import org.apache.poi.hwpf.extractor.WordExtractor;
 
 /**
  * ProjectManagerWindow
@@ -110,7 +125,7 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
     /**
      * CONSTRUCTOR
      */
-    public ProjectManagerWindow(String userName) {
+    public ProjectManagerWindow(String userName) throws IOException, BadLocationException {
 
         /**
          * Note: initComponents() executes the tabpaneChanged method. Thus, some
@@ -1541,8 +1556,20 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
 
         Tab PMTable = tabs.get(tableNames[0]);
         Tab issue_filesTable = tabs.get(tableNames[4]);
-        loadTable(PMTable);
-        loadTable(issue_filesTable);
+        try {
+            loadTable(PMTable);
+        } catch (IOException ex) {
+            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (BadLocationException ex) {
+            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try {
+            loadTable(issue_filesTable);
+        } catch (IOException ex) {
+            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (BadLocationException ex) {
+            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_menuItemAWSAssignActionPerformed
     /**
      * This method is performed when we click the upload changes button. it
@@ -1872,7 +1899,14 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
             addIssueWindow.toFront();
         } else {
             if (btnAddIssue.getText().contains("Add issue to")) {
-                addIssueWindow = new IssueWindow(-1, this.getSelectedTable());
+                try {
+                    ArrayList<Issue> issues = null;
+                    addIssueWindow = new IssueWindow(-1, this.getSelectedTable(), issues);
+                } catch (IOException ex) {
+                    Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 addIssueWindow.setVisible(true);
                 addIssueWindowShow = true;
             } 
@@ -1947,7 +1981,13 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
 
     private void menuItemReloadDataActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuItemReloadDataActionPerformed
 
-        reloadData();
+        try {
+            reloadData();
+        } catch (IOException ex) {
+            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (BadLocationException ex) {
+            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
         String searchColName = comboBoxField.getSelectedItem().toString();
 
         String tabName = getSelectedTabName();
@@ -1959,7 +1999,7 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
     }//GEN-LAST:event_menuItemReloadDataActionPerformed
 
     //reload the current tab data in table
-    private void reloadData() {
+    private void reloadData() throws IOException, BadLocationException {
         String tabName = getSelectedTabName();
         Tab tab = tabs.get(tabName);
         JTableCellRenderer cellRenderer = tab.getCellRenderer();
@@ -1981,7 +2021,7 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
 
     }
 
-    private void reloadAllData() {
+    private void reloadAllData() throws IOException, BadLocationException {
 
         for (Map.Entry<String, Tab> entry : tabs.entrySet()) {
             Tab tab = tabs.get(entry.getKey());
@@ -2183,7 +2223,13 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
 
     private void btnRevertChangesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRevertChangesActionPerformed
 
-        revertChanges();
+        try {
+            revertChanges();
+        } catch (IOException ex) {
+            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (BadLocationException ex) {
+            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
     }//GEN-LAST:event_btnRevertChangesActionPerformed
 
@@ -2212,7 +2258,16 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
             openingIssuesList.get(openningIssueId).toFront();
         } else {
             if (openingIssuesList.size() < 6) {
-                IssueWindow viewIssue = new IssueWindow(row, table);
+                IssueWindow viewIssue = null;
+                String currentabname = getSelectedTabName();
+                try {
+                    ArrayList<Issue> issues = issueDAO.get(currentabname);
+                    viewIssue = new IssueWindow(row, table, issues);
+                } catch (IOException ex) {
+                    Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 openingIssuesList.put(openningIssueId, viewIssue);
                 tabs.get(getSelectedTabName()).getCustomIdList().add(openningIssueId);
 //                tab.getCustomIdList().printOutIDList();
@@ -2339,7 +2394,13 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
     }//GEN-LAST:event_menuItemBackupActionPerformed
 
     private void menuItemReloadAllDataActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuItemReloadAllDataActionPerformed
-        reloadAllData();
+        try {
+            reloadAllData();
+        } catch (IOException ex) {
+            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (BadLocationException ex) {
+            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
         String searchColName = comboBoxField.getSelectedItem().toString();
 
         String tabName = getSelectedTabName();
@@ -2403,7 +2464,13 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
         Issue issue = issueDAO.getSelectedRow(getSelectedTable().getName(), ID.toString());
          
         
-          updateTableRow(getSelectedTable(),issue);
+           try {
+               updateTableRow(getSelectedTable(),issue);
+           } catch (IOException ex) {
+               Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+           } catch (BadLocationException ex) {
+               Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+           }
        }
     }//GEN-LAST:event_menuItemReloadSelectedDataActionPerformed
 
@@ -2457,7 +2524,7 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
     /**
      * loadData
      */
-    public void loadData() {
+    public void loadData() throws IOException, BadLocationException {
         loadTables(tabs);
     }
 
@@ -2649,7 +2716,16 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
                                     openingIssuesList.get(openningIssueId).toFront();
                                 } else {
                                     if (openingIssuesList.size() < 6) {
-                                        IssueWindow viewIssue = new IssueWindow(row, table);
+                                        IssueWindow viewIssue = null;
+                                        String currentabname = getSelectedTabName();
+                                        try {
+                                            ArrayList<Issue> issues = issueDAO.get(currentabname);
+                                            viewIssue = new IssueWindow(row, table, issues);
+                                        } catch (IOException ex) {
+                                            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+                                        } catch (BadLocationException ex) {
+                                            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+                                        }
                                         openingIssuesList.put(openningIssueId, viewIssue);
                                         tabs.get(getSelectedTabName()).getCustomIdList().add(openningIssueId);
 //                                        tabs.get(getSelectedTabName()).getCustomIdList().printOutIDList();
@@ -2892,7 +2968,7 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
     //        }
     //    }
 
-    public void loadTableWhenSelectedRows(int[] selectedRows, JTable table) {
+    public void loadTableWhenSelectedRows(int[] selectedRows, JTable table) throws SQLException {
         String str = table.getName();
 
         if (str == "PM" || str == "ELLEGUI" || str == "Analyster") {
@@ -3283,8 +3359,16 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
                                                 uploadChanges();  // upload changes to database
                                                 break;
                                             case 1:
+                                        {
+                                            try {
                                                 // if Revert, revert changes
                                                 revertChanges(); // reverts the model back
+                                            } catch (IOException ex) {
+                                                Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+                                            } catch (BadLocationException ex) {
+                                                Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+                                            }
+                                        }
                                                 break;
                                             default:
                                                 // do nothing -> cancel
@@ -3372,7 +3456,16 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
                                     openingIssuesList.get(openningIssueId).toFront();
                                 } else {
                                     if (openingIssuesList.size() < 6) {
-                                        IssueWindow viewIssue = new IssueWindow(row, table);
+                                        IssueWindow viewIssue = null;
+                                        String currentabname = getSelectedTabName();
+                                        try {
+                                            ArrayList<Issue> issues = issueDAO.get(currentabname);
+                                            viewIssue = new IssueWindow(row, table, issues);
+                                        } catch (IOException ex) {
+                                            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+                                        } catch (BadLocationException ex) {
+                                            Logger.getLogger(ProjectManagerWindow.class.getName()).log(Level.SEVERE, null, ex);
+                                        }
                                         openingIssuesList.put(openningIssueId, viewIssue);
                                         tabs.get(getSelectedTabName()).getCustomIdList().add(openningIssueId);
 //                                        tab.getCustomIdList().printOutIDList();
@@ -3637,7 +3730,7 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
      * @param tabs
      * @return
      */
-    public Map<String, Tab> loadTables(Map<String, Tab> tabs) {
+    public Map<String, Tab> loadTables(Map<String, Tab> tabs) throws IOException, BadLocationException {
 
         for (Map.Entry<String, Tab> entry : tabs.entrySet()) {
             Tab tab = tabs.get(entry.getKey());
@@ -3671,7 +3764,7 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
      * @param tab
      * @return
      */
-    public JTable loadTable(Tab tab) {
+    public JTable loadTable(Tab tab) throws IOException, BadLocationException {
         JTable table = tab.getTable();
         table = loadTableData(table);
         detectOpenIssues(tab); // this puts an orange dot in tab title
@@ -3683,7 +3776,7 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
      * tab) to load table and update orange dot.
      * @param table
      */
-    public JTable loadTableData(JTable table) {
+    public JTable loadTableData(JTable table) throws IOException, BadLocationException {
         String tableName = table.getName();
         
         // set table model data
@@ -3756,22 +3849,21 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
      * @param table
      * @return
      */
-    public JTable loadTable(String sql, JTable table) {
+    public JTable loadTable(String sql, JTable table) throws SQLException {
 
         Vector data = new Vector();
         Vector columnNames = new Vector();
         Vector columnClass = new Vector();
         int columns;
-
+        
         ResultSet rs = null;
         ResultSetMetaData metaData = null;
         try {
             rs = statement.executeQuery(sql);
             metaData = rs.getMetaData();
-
         } catch (Exception ex) {
             LoggingAspect.afterThrown(ex);
-        }
+        }        
         try {
             // Do not show "submitter" in "PM", "ELLEGUI", "Analyster" and "other" table
             if (!table.getName().equals("issue_files")) {
@@ -3798,7 +3890,7 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
         } catch (SQLException ex) {
             LoggingAspect.afterThrown(ex);
         }
-
+                
         EditableTableModel model = new EditableTableModel(data, columnNames, columnClass);
 
         // this has to be set here or else I get errors
@@ -3962,7 +4054,7 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
     /**
      * revertChanges used to revert changes of modified data to original data
      */
-    public void revertChanges() {
+    public void revertChanges() throws IOException, BadLocationException {
 
         String tabName = getSelectedTabName();
         Tab tab = tabs.get(tabName);
@@ -4511,7 +4603,7 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
      * @param table
      * @param issue 
      */
-    public void updateTableRow(JTable table, Issue issue) {
+    public void updateTableRow(JTable table, Issue issue) throws IOException, BadLocationException {
         int row = findTableModelRow(table,issue);
         if(row != -1){
             DefaultTableModel model = (DefaultTableModel) table.getModel();
@@ -4527,7 +4619,16 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
             // update -> no need for id
             model.setValueAt(issue.getApp(), row, 1);
             model.setValueAt(issue.getTitle(), row, 2);
-            model.setValueAt(issue.getDescription(), row, 3);
+            
+            byte[] descriptiontablebytesout = issue.getDescription();
+            InputStream descriptiontablestream = new ByteArrayInputStream(descriptiontablebytesout);
+            
+            RTFEditorKit rtfParser = new RTFEditorKit();
+            Document document = rtfParser.createDefaultDocument();
+            rtfParser.read(descriptiontablestream, document, 0);
+            String text = document.getText(0, document.getLength());
+            model.setValueAt(text, row, 3);
+            
             model.setValueAt(issue.getProgrammer(), row, 4);
             model.setValueAt(issue.getDateOpened(), row, 5);
             model.setValueAt(issue.getRk(), row, 6);
@@ -4554,14 +4655,32 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
      * Inserts a new rowIndex in the table
      * @param table
      * @param issue 
+     * @throws java.io.IOException 
      */
-    public void inserTableRow(JTable table, Issue issue) {
+    public void inserTableRow(JTable table, Issue issue) throws IOException, BadLocationException {
 
         Object[] rowData = new Object[12];
         rowData[0] = issue.getId();
         rowData[1] = issue.getApp();
         rowData[2] = issue.getTitle();
-        rowData[3] = issue.getDescription();
+        
+        byte[] descriptiontablebytesout = issue.getDescription();
+        InputStream descriptiontablestream = new ByteArrayInputStream(descriptiontablebytesout);
+        String convertedstrings = convertStreamToString(descriptiontablestream);
+        
+        String rtfsign = "\\par";
+        boolean rtfornot = convertedstrings.contains(rtfsign);
+        
+        if (rtfornot) {
+            RTFEditorKit rtfParser = new RTFEditorKit();
+            Document document = rtfParser.createDefaultDocument();
+            rtfParser.read(new ByteArrayInputStream(descriptiontablebytesout), document, 0);
+            String text = document.getText(0, document.getLength());
+            rowData[3] = text;
+        } else {
+            rowData[3] = convertedstrings;
+        }
+
         rowData[4] = issue.getProgrammer();
         rowData[5] = issue.getDateOpened();
         rowData[6] = issue.getRk();
@@ -4592,7 +4711,46 @@ public class ProjectManagerWindow extends JFrame implements ITableConstants {
         rowData[8] = issueFile.getNotes();
         ((DefaultTableModel)table.getModel()).addRow(rowData);
     }
+    
+    public String convertStreamToString(InputStream is) throws IOException {
+        // To convert the InputStream to String we use the
+        // Reader.read(char[] buffer) method. We iterate until the
+        // Reader return -1 which means there's no more data to
+        // read. We use the StringWriter class to produce the string.
+        if (is != null) {
+            Writer writer = new StringWriter();
 
+            char[] buffer = new char[1024];
+            try {
+                Reader reader;
+                reader = new BufferedReader(
+                        new InputStreamReader(is, "UTF-8"));
+                int n;
+                while ((n = reader.read(buffer)) != -1) {
+                    writer.write(buffer, 0, n);
+                }
+            } finally {
+                is.close();
+            }
+            return writer.toString();
+        }
+        return "";
+    }
+    
+    public String getRtfText(FileInputStream inStream) throws IOException {
+
+        HWPFDocument doc=new HWPFDocument(inStream);
+
+        WordExtractor rtfExtractor = new WordExtractor(doc);
+        String [] rtfArray = rtfExtractor.getParagraphText();
+
+        String rtfString = "";
+
+        for(int i=0; i < rtfArray.length; i++) rtfString += rtfArray[i];
+
+        System.out.println(rtfString);
+        return rtfString;
+     }
     /**
      * Locates the table model rowIndex index
      * @param issue

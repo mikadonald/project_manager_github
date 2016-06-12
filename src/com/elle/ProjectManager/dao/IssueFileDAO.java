@@ -189,7 +189,7 @@ public class IssueFileDAO {
         catch (SQLException e) {
             LoggingAspect.afterThrown(e);
         }
-        
+
         return issueFiles;
     }
     

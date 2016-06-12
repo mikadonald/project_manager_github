@@ -12,14 +12,14 @@ public class CompIssuesItem extends JTextArea{
     private String id;
     private String app;
     private String title;
-    private String description;
+    private byte[] description;
     private String programmer;
     private String dateOpened;
     private String rk;
     private String version;
     private String dateClosed;
 
-    public CompIssuesItem(String id, String app, String title, String description, 
+    public CompIssuesItem(String id, String app, String title, byte[] description, 
             String programmer, String dateOpened, String rk, String version, String dateClosed) {
         super();
         this.id = id;
@@ -64,11 +64,11 @@ public class CompIssuesItem extends JTextArea{
         this.title = title;
     }
 
-    public String getDescription() {
+    public byte[] getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(byte[] description) {
         this.description = description;
     }
 
